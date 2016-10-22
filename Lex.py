@@ -33,6 +33,8 @@ class Lexer:
                             while self.islegalprefix(strs[i]) or self.isdigit(strs[i]):
                                 token += strs[i]
                                 i += 1
+                                if i >= len(strs):
+                                    break
                             if token in self.keywords:
                                 self.symboltable[(token,self.symbol_pos)] = (token.upper(), '_')
                                 self.symbol_pos += 1
@@ -40,8 +42,14 @@ class Lexer:
                                 self.symboltable[(token,self.symbol_pos)] = ('IDN', token)
                                 self.symbol_pos += 1
                             token = ""
-                        if strs[i] == '/':
-                            if strs[i + 1] == '/':
+                            i -= 1
+                        elif strs[i] == '/':
+                            #temp = i
+                            if self.isdigit(strs[i + 1]) or (self.islegalprefix(strs[i + 1]) and strs[i + 1] != '_'):
+                                self.symboltable[(strs[i], self.symbol_pos)] = ('/', '_')
+                                self.symbol_pos += 1
+                                #i += 1
+                            elif strs[i + 1] == '/':
                                 while (i < len(strs)):
                                     token += strs[i]
                                     i += 1
@@ -65,11 +73,11 @@ class Lexer:
                                     self.errortable[(token,self.linenum)] = 'note error~'
                                 state = 0
                                 token = ''
-                        if i < len(strs) and (strs[i] in self.operator or strs[i] in self.edgeop):
+                        elif i < len(strs) and (strs[i] in self.operator or strs[i] in self.edgeop):
                             self.symboltable[(strs[i],self.symbol_pos)] = (strs[i], '_')
                             self.symbol_pos += 1
                         #const number
-                        if i < len(strs) and self.isdigit(strs[i]):
+                        elif i < len(strs) and self.isdigit(strs[i]):
                             while i < len(strs) and (strs[i] == 'e' or strs[i] == '.' or self.isdigit(strs[i]) or strs[i] == '+' or strs[i] == '-'):
                                 if i >= len(strs):
                                     break
@@ -95,7 +103,7 @@ class Lexer:
                             token = ''
                             i -= 1
                             state = 0
-                        if i < len(strs) and strs[i] == '\"':
+                        elif i < len(strs) and strs[i] == '\"':
                             while 1:
                                 if i >= len(strs):
                                     break
@@ -120,7 +128,8 @@ class Lexer:
                     self.linenum += 1
 
     def islegalprefix(self, ch):
-        return ch == '_' or ch in [chr(i) for i in range(ord("a"), ord("z")+1)]
+        return ch == '_' or ch in [chr(i) for i in range(ord("a"), ord("z")+1)] or\
+        ch in [chr(i) for i in range(ord("A"), ord("Z")+1)]
 
     def isdigit(self, ch):
         return ch in map(str, range(10))
