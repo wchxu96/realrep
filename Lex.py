@@ -1,9 +1,10 @@
 import collections
 class Lexer:
     def __init__(self):
-        self.keywords = ['int', 'float', 'bool','char','if', 'else', 'return', 'do', 'while', 'return', 'def']
+        self.keywords = ['int', 'float', 'boolean','char','if', 'else', 'return', 'do', 'while', 'return', 'def','typedef','struct']
         self.operator = ['+', '-', '*', '/', '|', '&', '^','!','%','>','<']
-        self.edgeop = ['=', ';', '[', ']', '.','{','}','(',')']
+        self.edgeop = ['=', ';', '[', ']','{','}','(',')',','] + self.operator
+        self.space = [' ','\t']
         self.noteDFA = [['^/', '/', '#', '#', '#'], ['^/*', '/', '*', '#', '#'],
                    ['#', '#', '^*', '*', '#'], ['#', '#', '^/*', '*', '/'],
                    ['#', '#', '#', '#', '#']]
@@ -25,7 +26,7 @@ class Lexer:
         with open(src, 'r') as f:
             for strs in f:
                 if strs == "":
-                    pass
+                    self.linenum += 1
                 else:
                     i = 0
                     while i < len(strs): #identifier
@@ -35,25 +36,33 @@ class Lexer:
                                 i += 1
                                 if i >= len(strs):
                                     break
+                            '''if i < len(strs) and strs[i] not in self.edgeop:
+                                while strs[i] not in self.edgeop:
+                                    token += strs[i]
+                                    i += 1
+                                if i < len(strs):
+                                    break
+                                self.errortable[(token,self.linenum)] = 'identifier error~'
+                            '''
                             if token in self.keywords:
-                                self.symboltable[(token,self.symbol_pos)] = (token.upper(), '_')
+                                self.symboltable[(token,self.symbol_pos,self.linenum)] = (token.upper(), '_')
                                 self.symbol_pos += 1
                             else:
-                                self.symboltable[(token,self.symbol_pos)] = ('IDN', token)
+                                self.symboltable[(token,self.symbol_pos,self.linenum)] = ('IDN', token)
                                 self.symbol_pos += 1
                             token = ""
                             i -= 1
                         elif strs[i] == '/':
                             #temp = i
                             if self.isdigit(strs[i + 1]) or (self.islegalprefix(strs[i + 1]) and strs[i + 1] != '_'):
-                                self.symboltable[(strs[i], self.symbol_pos)] = ('/', '_')
+                                self.symboltable[(strs[i], self.symbol_pos,self.linenum)] = ('/', '_')
                                 self.symbol_pos += 1
                                 #i += 1
                             elif strs[i + 1] == '/':
                                 while (i < len(strs)):
                                     token += strs[i]
                                     i += 1
-                                self.symboltable[(token, self.symbol_pos)] = ("Note", token)
+                                self.symboltable[(token, self.symbol_pos,self.linenum)] = ("Note", token)
                                 token = ''
                             else:
                                 while 1:
@@ -67,18 +76,18 @@ class Lexer:
                                         state = res[1]
                                     i += 1
                                 if state == 4:
-                                    self.symboltable[(token, self.symbol_pos)] = ("Note", token)
+                                    self.symboltable[(token, self.symbol_pos,self.linenum)] = ("Note", token)
                                     self.symbol_pos += 1
                                 else:
                                     self.errortable[(token,self.linenum)] = 'note error~'
                                 state = 0
                                 token = ''
                         elif i < len(strs) and (strs[i] in self.operator or strs[i] in self.edgeop):
-                            self.symboltable[(strs[i],self.symbol_pos)] = (strs[i], '_')
+                            self.symboltable[(strs[i],self.symbol_pos,self.linenum)] = (strs[i], '_')
                             self.symbol_pos += 1
                         #const number
                         elif i < len(strs) and self.isdigit(strs[i]):
-                            while i < len(strs) and (strs[i] == 'e' or strs[i] == '.' or self.isdigit(strs[i]) or strs[i] == '+' or strs[i] == '-'):
+                            while i < len(strs) and (strs[i] == 'E' or strs[i] == '.' or self.isdigit(strs[i]) or strs[i] == '+' or strs[i] == '-'):
                                 if i >= len(strs):
                                     break
                                 res = self.in_digitdfa(strs[i], state)
@@ -89,17 +98,28 @@ class Lexer:
                                     token += strs[i]
                                     i += 1
                             #print state
-                            if state == 1 or state == 3 or state == 6:
-                                self.symboltable[(token,self.symbol_pos)] = ('CONST NUM', token)
+                            if i < len(strs) and strs[i] not in self.edgeop and strs[i] != ' ':
+                                while i < len(strs) and  strs[i] not in self.edgeop:
+                                    token += strs[i]
+                                    i += 1
+                                self.errortable[(token, self.linenum)] = 'error on const number~'
+                                token = ''
+                                continue
+
+                            elif state == 1 or state == 3 or state == 6:
+                                self.symboltable[(token,self.symbol_pos,self.linenum)] = ('CONST NUM', token)
                                 self.symbol_pos += 1
                             else:
                                 # hasmistake = True
-                                while strs[i] != '\0' and strs[i] != ',' and strs[i] != ';' and strs[i] != ' ':
-                                    token += strs[i]
-                                    i += 1
-                                    if i >= len(strs):
-                                        break
-                                self.errortable[(token,self.linenum)] = 'error on const number~'
+                                if i >= len(strs):
+                                    self.errortable[(token, self.linenum)] = 'error on const number~'
+                                else:
+                                    while strs[i] != '\0' and strs[i] != ',' and strs[i] != ';' and strs[i] != ' ':
+                                        token += strs[i]
+                                        i += 1
+                                        if i >= len(strs):
+                                            break
+                                    self.errortable[(token,self.linenum)] = 'error on const number~'
                             token = ''
                             i -= 1
                             state = 0
@@ -118,12 +138,15 @@ class Lexer:
                                 i += 1
 
                             if state == 2:
-                                self.symboltable[(token, self.symbol_pos)] = (token, 'CONST STRING')
+                                self.symboltable[(token, self.symbol_pos,self.linenum)] = (token, 'CONST STRING')
                                 self.symbol_pos += 1
                             elif state == 1:
                                 self.errortable[(token, self.linenum)] = 'string not blocked~'
                             state = 0
                             token = ''
+                        elif strs[i] == ' ':
+                            i = i + 1
+                            continue
                         i += 1
                     self.linenum += 1
 
@@ -151,7 +174,7 @@ class Lexer:
     def in_digitdfa(self,ch,curstate):
         if ch == '.':
             ch = '.'
-        elif ch == 'e':
+        elif ch == 'E':
             ch = 'e'
         elif ch == '+' or ch == '-':
             ch == '+-'
@@ -171,19 +194,26 @@ class Lexer:
         return False,'_'
 
 
-    def printtoconsole(self):
-        for (item, pos) in self.symboltable:
-            print "%s %d <%s, %s>" % (item, pos, self.symboltable[(item,pos)][0], self.symboltable[(item,pos)][1])
+    def printtoconsole(self,dest):
+        for (item, pos,line) in self.symboltable:
+            print "%s %d <%s, %s> on line %d" % (item, pos, self.symboltable[(item,pos,line)][0], self.symboltable[(item,pos,line)][1],line)
+            dest.write("%s %d <%s, %s> on line %d" % (item, pos, self.symboltable[(item,pos,line)][0], self.symboltable[(item,pos,line)][1],line))
+            dest.write('\n')
 
-    def printerror(self):
+    def printerror(self,dest):
         for (item,linenum) in self.errortable:
             print "%s line : %d  <%s>" % (item,linenum,self.errortable[(item,linenum)])
+            dest.write("%s line : %d  <%s>" % (item, linenum, self.errortable[(item,linenum)]))
+            dest.write('\n')
+
 
 if __name__ == '__main__':
     lex = Lexer()
     lex.anylisis('test.c')
-    lex.printtoconsole()
+    dest = open('dest.txt','w')
+    lex.printtoconsole(dest)
     print '-----------------------error-------------------------'
-    lex.printerror()
+    dest.write('-----------------------error-------------------------' + '\n')
+    lex.printerror(dest)
 
 
