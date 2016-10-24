@@ -18,6 +18,9 @@ def preparetosend(src):
             i += 1
     return allitem
 
+def time_out:
+    pass
+
 if __name__ == '__main__':
     cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     host = socket.gethostbyname()
