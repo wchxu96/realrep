@@ -36,12 +36,13 @@ def main():
     while 1:
         data,address = socketserver.recvfrom(100000)
         data = pickle.loads(data)
-        if data[0] == expected_seq_num + 1:
-            send_ack(data[0])
+        get_seq_num = data[0]
+        if get_seq_num == expected_seq_num + 1:
+            send_ack(get_seq_num)
             expected_seq_num += 1
             with open('result.txt', 'ab') as f:
                 f.write(data[1])
-        elif data[0] > expected_seq_num + 1:
+        elif get_seq_num > expected_seq_num + 1:
             send_ack(expected_seq_num)
 
 
