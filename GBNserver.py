@@ -16,28 +16,35 @@ client --> server
 # data_pkt = namedtuple('data_pkt','seq_num')
 data_pkt = namedtuple('data_pkt', 'seq_num data')
 # ack_pkt = namedtuple('ack_pkt','seq_num','yes')
-port = 3377
+'''port = 3377
 prob_loss = 0.4
 socketserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 socketserver.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
 socketserver.bind(('', port))
+'''
 expected_seq_num = 0  # the number expected to get
 
 
-def send_ack(seq_num):
+def send_ack(seq_num,s):
     ack_message = [seq_num, 'y']
     clihost = ''
     cliport = 2333
-    socketserver.sendto(pickle.dumps(ack_message), (clihost, cliport))
+    s.sendto(pickle.dumps(ack_message), (clihost, cliport))
 
 
 def main():
     global expected_seq_num
-    global socketserver
     lost_seq_num = []
+    port = 3377
+    prob_loss = 0.4
+    socketserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    socketserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    socketserver.bind(('', port))
     while 1:
+        #data_pkt = namedtuple('data_pkt', 'seq_num data')
+        # ack_pkt = namedtuple('ack_pkt','seq_num','yes')
         data, address = socketserver.recvfrom(100000)
-        data = pickle.load(data)
+        data = pickle.loads(data)
         get_seq_num = data[0]
         rand = random.random()
         if rand <= prob_loss:
@@ -45,15 +52,14 @@ def main():
             pass
         elif get_seq_num == expected_seq_num:
             print '已按序正确收到'+ str(expected_seq_num)+'数据包'+'\n'
-            send_ack(get_seq_num)
+            send_ack(get_seq_num, socketserver)
             expected_seq_num += 1
             with open('result.txt', 'ab') as f:
                 f.write(data[1])
                 f.write('\n')
         elif get_seq_num > expected_seq_num:
             print '已按序正确收到' + str(expected_seq_num - 1) + '数据包' + '\n'
-            send_ack(expected_seq_num-1)
-
+            send_ack(expected_seq_num-1, socketserver)
 
 if __name__ == '__main__':
     main()
