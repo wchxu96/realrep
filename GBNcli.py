@@ -58,10 +58,11 @@ def time_do(signum,frame):#重发
 
 
 def receive_ack():
+    global window_low,ackeditem
     while 1:
-        s = cli.recv(1024)
-        print 's :' + s
-        s = pickle.load(s)
+        s = sr.recv(1024)
+        s = pickle.loads(s)
+        print s
         if s[0] == window_low:
             print '收到来自第' + str(s[0]) + '个数据包的ack'
             all_pkt[window_low] = 0  # 设置为发送并接收状态
@@ -72,16 +73,16 @@ def receive_ack():
             pass
 
 def main():
-    global ackeditem, serverhost, serverport,allitem,all_pkt,window_low
+    global ackeditem, serverhost, serverport ,allitem,all_pkt,window_low
     preparetosend(srcfile)
     signal.signal(signal.SIGALRM,time_do)
     cli.bind(('',2233))
     cli.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     cli.connect(('',3377))
-    t = threading.Thread(target=receive_ack())
+    t = threading.Thread(target=receive_ack)
     t.setDaemon(True)
     t.start()
-    while ackeditem != len(allitem) - 1 and window_high != len(allitem):
+    while ackeditem != len(all_pkt):
         #i = window_low
         send_group()
 

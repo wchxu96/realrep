@@ -26,20 +26,21 @@ socketserver.bind(('', port))
 expected_seq_num = 0  # the number expected to get
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(('', 2359))  # 发送ack的端口
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
 def send_ack(seq_num):
     ack_message = [seq_num, 'y']
     clihost = ''
     cliport = 2333
-    s.sendto(pickle.dumps(ack_message), (clihost, cliport))
+    s.sendto(pickle.dumps(ack_message), ('', 2360))
 
 
 def main():
     global expected_seq_num
     lost_seq_num = []
     port = 3377
-    prob_loss = 0.3
+    prob_loss = 0.1
     socketserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     socketserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socketserver.bind(('', port))
@@ -66,7 +67,7 @@ def main():
                 pass
             else:
                 print '已按序正确收到' + str(expected_seq_num - 1) + '数据包' + '\n'
-                send_ack(expected_seq_num - 1, socketserver)
+                send_ack(expected_seq_num - 1)
 
 
 if __name__ == '__main__':
