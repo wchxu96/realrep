@@ -12,12 +12,13 @@ MAX_WINDOW_wide = 5
 all_pkt = []  # 所有的数据包状态　int数组，环形?已发送并确认设置为0,已发送未确认设置为１,未发送设置为2
 window_low = 0
 window_high = int(MAX_WINDOW_wide) #窗口不包括window_high  --- [window_low ~ window_high - 1]窗口位置
-time_out = 5# 超时时间
+time_out = 1# 超时时间
 allitem = []#　所有数据包
 ackeditem = 0 #已确认的数据包
 cli = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sr = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 sr.bind(('',2360))
+sr.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 def preparetosend(src):
     global allitem,all_pkt
@@ -52,8 +53,8 @@ def send_item(item):
 def time_do(signum,frame):#重发
     global window_low, window_high
     signal.alarm(0)
-    signal.setitimer(signal.ITIMER_REAL, time_out)
-    for i in range(window_low,window_high):
+    signal.alarm(time_out)
+    for i in range(window_low,min(window_low+N,len(all_pkt))):
         cli.sendto(allitem[i],('',3377))
 
 

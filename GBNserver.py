@@ -40,7 +40,7 @@ def main():
     global expected_seq_num
     lost_seq_num = []
     port = 3377
-    prob_loss = 0.1
+    prob_loss = 0.6
     socketserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     socketserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socketserver.bind(('', port))
