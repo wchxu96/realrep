@@ -16,6 +16,10 @@ client --> server
 '''
 # data_pkt = namedtuple('data_pkt','seq_num')
 data_pkt = namedtuple('data_pkt', 'seq_num data')
+try:
+    f = open('result.jpg','w')
+except IOError as err:  # 使用as将异常对象，并将其赋值给一个标识符
+    print('File Error:' + str(err))
 # ack_pkt = namedtuple('ack_pkt','seq_num','yes')
 '''port = 3377
 prob_loss = 0.4
@@ -40,7 +44,7 @@ def main():
     global expected_seq_num
     lost_seq_num = []
     port = 3377
-    prob_loss = 0.6
+    prob_loss = 0.9
     socketserver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     socketserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     socketserver.bind(('', port))
@@ -59,9 +63,7 @@ def main():
             print data[1]
             send_ack(get_seq_num)
             expected_seq_num += 1
-            with open('result.txt', 'w') as f:
-                f.write(data[1])
-                f.write('\n')
+            f.write(data[1])
         elif get_seq_num > expected_seq_num:
             if expected_seq_num == 0:
                 pass

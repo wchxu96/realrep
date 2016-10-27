@@ -6,7 +6,7 @@ import time
 import signal
 import threading
 
-srcfile = 'test.txt'
+srcfile = 'test.jpg'
 data_pkt = namedtuple('data_pkt', 'seq_num data')
 MAX_WINDOW_wide = 5
 all_pkt = []  # 所有的数据包状态　int数组，环形?已发送并确认设置为0,已发送未确认设置为１,未发送设置为2
@@ -41,9 +41,8 @@ def send_group():
     for i in range(window_low, window_low + MAX_WINDOW_wide):  # 如果窗口内有新加入的item则发送该item
         if i >= len(all_pkt):
             break
-        if all_pkt[i] == 2:
-            send_item(allitem[i])
-            all_pkt[i] = 1
+        send_item(allitem[i])
+        all_pkt[i] = 1
 
 def send_item(item):
     global serverport, serverhost
@@ -83,7 +82,7 @@ def main():
     t = threading.Thread(target=receive_ack)
     t.setDaemon(True)
     t.start()
-    while ackeditem != len(all_pkt):
+    while ackeditem != len(all_pkt)+1:
         #i = window_low
         send_group()
 
