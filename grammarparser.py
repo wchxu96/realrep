@@ -152,11 +152,6 @@ class llgrammarparser:
                 self.first[nter] += self.first[item]
             self.first[nter] = list(set(self.first[nter]))
             '''
-
-           # self.first[nter] = []
-
-
-
             
     '''
     def iftonone(self,ch): #ch 是否能推导出none
@@ -175,6 +170,36 @@ class llgrammarparser:
         #好吧，shachale
     '''
 
+    #计算非终结符的follow集
+    def makefollow(self):
+        if len(self.first) == 0:
+            self.makefirst()
+        for nter in self.notfinishsymbol:
+            self.follow[nter] = []
+        self.follow['Px'].append('$')
+        haschange = True
+        while haschange:
+            haschange = False
+            for nter in self.notfinishsymbol:
+                if nter == 'Px':
+                    continue
+                items = self.getleft(nter)
+                for item in items:#可以在哪种推导中发现它
+                    rank = self.index[item]
+                    l = filter(lambda x: nter in x, self.grammar[rank][item])#nter 在哪种右部推导中
+                    for i in l:
+                        idx = i.index(nter)
+                        if idx < len(i) - 1:
+                            changed = self.combine(self.follow[nter],self.first[i[idx + 1]])
+                            if changed:
+                                haschange = True
+                        elif idx == len(i) - 1:
+                            changed = self.combine(self.follow[nter],self.follow[item])
+                            if changed:
+                                haschange = True
+
+
+
     def hasLeft(self,symbol):
         rank = self.index[symbol]
         return map(lambda x: x[0],self.grammar[rank][symbol])
@@ -186,6 +211,15 @@ class llgrammarparser:
                 l1.append(c)
                 haschange = True
         return haschange
+
+    #这个符号能从哪个非终结符推出?
+    def getleft(self,symbol):
+        res = []
+        for nter in self.notfinishsymbol:
+            rank = self.index[nter]
+            if symbol in reduce(lambda x,y:x+y,self.grammar[rank][nter]):
+                res.append(nter)
+        return res
 
 
 if __name__ == '__main__':
@@ -202,3 +236,8 @@ if __name__ == '__main__':
     print s.hasLeft('Px')
     s.makefirst()
     print s.first
+    s.makefollow()
+    print s.follow
+    print len(s.follow)
+    print len(s.notfinishsymbol)
+    #print s.getleft('E')
