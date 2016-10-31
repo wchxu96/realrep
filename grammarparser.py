@@ -1,7 +1,9 @@
 # coding=utf-8
-import uniout #打印中文用的
+import uniout  # 打印中文用的
+
 import sys
-sys.setrecursionlimit(100000)
+
+sys.setrecursionlimit(10000)
 
 
 class llgrammarparser:
@@ -9,13 +11,13 @@ class llgrammarparser:
         self.grammar = []
         self.grammarindex = []
         self.finishsymbol = []
-        self.notfinishsymbol = []#test
+        self.notfinishsymbol = []  # test
         self.first = {}
         self.follow = {}
         self.tonone = []
         self.index = {}
 
-    def pretodumpgrammar(self):#准备文法
+    def pretodumpgrammar(self):  # 准备文法
         '''
         #flag = False  # flag为true时一直加入设定为一个推导组
         eachreduce = []
@@ -66,7 +68,7 @@ class llgrammarparser:
     #计算first集
     '''
         i = 0
-        with open('grammarex.txt') as f:
+        with open('grammar.txt') as f:
             for strs in f:
                 temp = {}
                 dictrightvector = []
@@ -95,37 +97,95 @@ class llgrammarparser:
                                 if str not in self.finishsymbol:
                                     self.finishsymbol.append(str)
 
-    def first(self):
+    def makefirst(self):
         # 首先计算终结符的first集合
-        for nter in self.finishsymbol:
-            self.first[nter] = nter #终结符的first集等于其本身
-        for eachrecgroup in self.grammar:
-            #for
-            pass
+        # for nter in self.finishsymbol:
+        #    self.first[nter] = nter #终结符的first集等于其本身
+        # eachfirstset = {}
+        # for ter in self.notfinishsymbol:
+        #    rank = self.index[ter]
+        # 本身递归很简单，但python递归支持实在太差
+        '''
+        for symbol in (self.finishsymbol + self.notfinishsymbol):
+            if symbol in self.finishsymbol:
+                self.first[symbol] = symbol  # 终结符的first集合等于他本身
+            else:
+                rank = self.index[symbol]
+                golist = map(lambda l: l[0], self.grammar[rank][symbol])
+                golist = list(set(golist))
+                stack = []
+                for item in golist:
+                    if item in self.finishsymbol:
+                        self.first[symbol].append(item)
+                    elif item in self.notfinishsymbol:
+                        stack.append(item)
+                while len(stack) != 0:
+                    pickone = stack.pop(0)
+                    pickitem = self.index[pickone]
+                    itemgolist = map(lambda l: l[0], self.grammar[pickitem][pickone])
+                    golist = list(set(golist))
+                    for i in golist:
+                        if i in self.finishsymbol:
+                            self.first[symbol].append(i)
+                        elif i in self.notfinishsymbol:
+                            stack.append(i)
+            '''
+            #naive的算法完全跑不了，尝试一下从后向前记忆化搜索估计会快很多
+        for ter in self.finishsymbol:
+            self.first[ter] = [ter]
+        for nter in self.notfinishsymbol:
+            self.first[nter] = []
+        haschange = True
+        while(haschange):
+            haschange = False
+            for nter in self.notfinishsymbol:
+                items = self.hasLeft(nter)
+                for item in items:
+                    changed = self.combine(self.first[nter], self.first[item])
+                    if changed:
+                        haschange = True
+            '''
+            rank = self.index[nter]
+            for item in map(lambda x: x[0],self.grammar[rank][nter]):
+                if item == nter:
+                    continue
+                self.first[nter] += self.first[item]
+            self.first[nter] = list(set(self.first[nter]))
+            '''
+
+           # self.first[nter] = []
 
 
+
+            
+    '''
     def iftonone(self,ch): #ch 是否能推导出none
-        if ch in self.tonone:
-            return True
-        elif ch == '$':
-            return True
-        elif ch in self.finishsymbol and ch != '$':
+        if ch in self.finishsymbol and ch != '$':
             return False
-        else:
-            flag = True
+        elif ch in self.notfinishsymbol:
+            #flag = True
             rank = self.index[ch]
-            for i in self.grammar[rank][ch]:
-                if '$' in i:
-                    self.tonone.append(ch)
-                    return True
-                else:
-                    for item in i:
-                        if not self.iftonone(item):
-                            flag = False
-            return flag
-        #递归爆炸,不仅要判断出ch是否能推导出'$'同时还要将self.tonone列表填充完毕
+            if ['$'] in self.grammar[rank][ch]:
+                return True
+            return False
+        #递归爆炸,不仅要判断出ch是否能推导出'$'同时还要将self.tonone列表填充完毕,这里非常难处理
+        #只能考虑利用文法本身的特点予以简化,只比较ch所对应字典的值(二维数组)中是否存在['$']的数组
+        #例如K = x1x2x3x4 比较精确的判断是只有非终结符x1x2x3x4都可以推导为空的情况才可以说K可以
+        #推导为空，只能牺牲一定精确度
+        #好吧，shachale
+    '''
 
+    def hasLeft(self,symbol):
+        rank = self.index[symbol]
+        return map(lambda x: x[0],self.grammar[rank][symbol])
 
+    def combine(self,l1,l2):
+        haschange = False
+        for c in l2:
+            if c not in l1:
+                l1.append(c)
+                haschange = True
+        return haschange
 
 
 if __name__ == '__main__':
@@ -135,6 +195,10 @@ if __name__ == '__main__':
     print s.notfinishsymbol
     print s.finishsymbol
     print sorted(s.index.items(), key=lambda d: d[1])
-    print len(s.index)
-    print s.iftonone("E'")
-    #print s.tonone
+    #print s.index
+    # print s.iftonone('relational_expression')
+    # print s.grammar[43]
+    # print s.tonone
+    print s.hasLeft('Px')
+    s.makefirst()
+    print s.first
