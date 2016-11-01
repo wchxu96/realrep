@@ -2,10 +2,13 @@
 import uniout  # 打印中文用的
 
 import sys
+from collections import namedtuple
 
 sys.setrecursionlimit(10000)
 
+item = namedtuple('item', 'left tolist dotindex') #项集中每一个状态的定义
 
+#暂时写成SLR(1)的，以后再改吧
 class llgrammarparser:
     def __init__(self):
         self.grammar = []
@@ -16,7 +19,8 @@ class llgrammarparser:
         self.follow = {}
         self.tonone = []
         self.index = {}
-
+        self.itemfamiy = []#LR(0)项集族，是一个列表，列表中的每一项都是一个列表，其值为一个字典，字典键为每个推导的左部，值为一个包含右部推导的一个
+                            #列表与项集的点的位置构成的二元组
     def pretodumpgrammar(self):  # 准备文法
         '''
         #flag = False  # flag为true时一直加入设定为一个推导组
@@ -68,7 +72,7 @@ class llgrammarparser:
     #计算first集
     '''
         i = 0
-        with open('grammar.txt') as f:
+        with open('grammarex.txt') as f:
             for strs in f:
                 temp = {}
                 dictrightvector = []
@@ -176,12 +180,12 @@ class llgrammarparser:
             self.makefirst()
         for nter in self.notfinishsymbol:
             self.follow[nter] = []
-        self.follow['Px'].append('$')
+        self.follow["E'"].append('$')
         haschange = True
         while haschange:
             haschange = False
             for nter in self.notfinishsymbol:
-                if nter == 'Px':
+                if nter == "E'":
                     continue
                 items = self.getleft(nter)
                 for item in items:#可以在哪种推导中发现它
@@ -197,8 +201,6 @@ class llgrammarparser:
                             changed = self.combine(self.follow[nter],self.follow[item])
                             if changed:
                                 haschange = True
-
-
 
     def hasLeft(self,symbol):
         rank = self.index[symbol]
@@ -222,6 +224,39 @@ class llgrammarparser:
         return res
 
 
+    def getitemfamily(self):
+        pass
+
+    def closure(self,statelist): #传入一个项集　list[item]
+        res = []
+        temp = []
+        haschange = True
+        res += statelist
+        while haschange:
+            haschange = False
+            for items in res:
+                if items.dotindex != len(items.tolist) and items.tolist[items.dotindex] in self.notfinishsymbol:
+                    a = items.dotindex
+                    rank = self.index[items.tolist[a]]
+                    for eachlist in self.grammar[rank][items.tolist[a]]:
+                        state = item(items.tolist[a],eachlist,0)
+                        temp.append(state)
+                    changed = self.combine(res,temp)
+                    if changed:
+                        haschange = True
+        return res
+
+
+    def goto(self,statelist,symbol):#statelist 项集　symbol 文法符号 返回一个项集
+        res = []
+        for state in statelist:
+            a = state.dotindex
+            if state.dotindex != len(state.tolist) and state.tolist[a] == symbol:
+                aftershift = item(state.left,state.tolist,a + 1)
+                res.append(aftershift)
+        print res
+        return self.closure(res)
+
 if __name__ == '__main__':
     s = llgrammarparser()
     s.pretodumpgrammar()
@@ -233,7 +268,7 @@ if __name__ == '__main__':
     # print s.iftonone('relational_expression')
     # print s.grammar[43]
     # print s.tonone
-    print s.hasLeft('Px')
+    #print s.hasLeft('Px')
     s.makefirst()
     print s.first
     s.makefollow()
@@ -241,3 +276,5 @@ if __name__ == '__main__':
     print len(s.follow)
     print len(s.notfinishsymbol)
     #print s.getleft('E')
+    print s.closure([item("E'",['E'],0)])
+    print s.goto([item("E'",['E'],1),item("E",['E','+','T'],1)],'+')

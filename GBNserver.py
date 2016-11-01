@@ -17,7 +17,7 @@ client --> server
 # data_pkt = namedtuple('data_pkt','seq_num')
 data_pkt = namedtuple('data_pkt', 'seq_num data')
 try:
-    f = open('result.gif','w')
+    f = open('result.jpg','w')
 except IOError as err:  # 使用as将异常对象，并将其赋值给一个标识符
     print('File Error:' + str(err))
 # ack_pkt = namedtuple('ack_pkt','seq_num','yes')

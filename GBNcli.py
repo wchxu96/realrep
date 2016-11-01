@@ -6,7 +6,7 @@ import time
 import signal
 import threading
 
-srcfile = 'test.gif'
+srcfile = 'test.jpg'
 data_pkt = namedtuple('data_pkt', 'seq_num data')
 MAX_WINDOW_wide = 5
 all_pkt = []  # 所有的数据包状态　int数组，环形?已发送并确认设置为0,已发送未确认设置为１,未发送设置为2

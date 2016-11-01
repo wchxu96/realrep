@@ -1,6 +1,4 @@
-E->T E'
-E'->+ T E' | $
-T->F T'
-T'->* F T' | $
-F->( E ) | id
-H->E' T'
+E'->E
+E->E+T | T
+T->T*F | F
+F->(E) | id
