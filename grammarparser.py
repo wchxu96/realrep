@@ -257,7 +257,7 @@ class llgrammarparser:
     def getitemfamily(self):# lr(0)规范项集族
         C = []
         #print self.notfinishsymbol
-        C.append(self.closure([item("E''",['E'],0)]))
+        C.append(self.closure([item("E'",['E'],0)]))
         #print C
         haschange = True
         while haschange:
@@ -270,6 +270,35 @@ class llgrammarparser:
                             haschange = True
 
         return C
+
+    def makeautomachine(self):
+        if len(self.follow) == 0:
+            self.makefollow()
+        C = self.getitemfamily()#C:项集族　C = {I0,I1,...In}
+        Action = {} #action表
+        GOTO = {}#goto表
+        l = len(C)
+        for i in range(l):
+            for symbol in (self.notfinishsymbol + self.finishsymbol):
+                toitem = self.goto(C[i],symbol)
+                if toitem in C:
+                    GOTO[(i,symbol)] = C.index(toitem)#构造goto
+        #构造Action表
+        for j in range(l):
+            for state in C[j]:
+                num = state.dotindex
+                if num != len(state.tolist) and state.tolist[num] in self.finishsymbol and self.goto(C[j],state.tolist[num]) in C:
+                    statenum = C.index(self.goto(C[j],state.tolist[num]))
+                    Action[(j,state.tolist[num])] = "s"+str(statenum)
+                elif num == len(state.tolist):
+                    left = state.left
+                    if left != "E'":
+                        print left
+                        for followleft in self.follow[left]:
+                            Action[(j,followleft)] = "r"+str(left)#归约为r后的非终结符
+
+        return Action,GOTO
+
 
 if __name__ == '__main__':
     s = llgrammarparser()
@@ -292,5 +321,5 @@ if __name__ == '__main__':
     # print s.getleft('E')
     print s.closure([item("E'", ['E'], 0)])
     #print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
-    print len(s.getitemfamily())
-    #print
+    #print s.getitemfamily()
+    print s.makeautomachine()
