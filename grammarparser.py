@@ -1,14 +1,14 @@
 # coding=utf-8
-import uniout  # 打印中文用的
 
 import sys
 from collections import namedtuple
 
 sys.setrecursionlimit(10000)
 
-item = namedtuple('item', 'left tolist dotindex') #项集中每一个状态的定义
+item = namedtuple('item', 'left tolist dotindex')  # 项集中每一个状态的定义
 
-#暂时写成SLR(1)的，以后再改吧
+
+# 暂时写成SLR(1)的，以后再改吧
 class llgrammarparser:
     def __init__(self):
         self.grammar = []
@@ -19,8 +19,9 @@ class llgrammarparser:
         self.follow = {}
         self.tonone = []
         self.index = {}
-        self.itemfamiy = []#LR(0)项集族，是一个列表，列表中的每一项都是一个列表，其值为一个字典，字典键为每个推导的左部，值为一个包含右部推导的一个
-                            #列表与项集的点的位置构成的二元组
+        self.itemfamiy = []  # LR(0)项集族，是一个列表，列表中的每一项都是一个列表，其值为一个字典，字典键为每个推导的左部，值为一个包含右部推导的一个
+        # 列表与项集的点的位置构成的二元组
+
     def pretodumpgrammar(self):  # 准备文法
         '''
         #flag = False  # flag为true时一直加入设定为一个推导组
@@ -134,13 +135,13 @@ class llgrammarparser:
                         elif i in self.notfinishsymbol:
                             stack.append(i)
             '''
-            #naive的算法完全跑不了，尝试一下从后向前记忆化搜索估计会快很多
+        # naive的算法完全跑不了，尝试一下从后向前记忆化搜索估计会快很多
         for ter in self.finishsymbol:
             self.first[ter] = [ter]
         for nter in self.notfinishsymbol:
             self.first[nter] = []
         haschange = True
-        while(haschange):
+        while (haschange):
             haschange = False
             for nter in self.notfinishsymbol:
                 items = self.hasLeft(nter)
@@ -156,7 +157,7 @@ class llgrammarparser:
                 self.first[nter] += self.first[item]
             self.first[nter] = list(set(self.first[nter]))
             '''
-            
+
     '''
     def iftonone(self,ch): #ch 是否能推导出none
         if ch in self.finishsymbol and ch != '$':
@@ -174,7 +175,7 @@ class llgrammarparser:
         #好吧，shachale
     '''
 
-    #计算非终结符的follow集
+    # 计算非终结符的follow集
     def makefollow(self):
         if len(self.first) == 0:
             self.makefirst()
@@ -188,25 +189,25 @@ class llgrammarparser:
                 if nter == "E'":
                     continue
                 items = self.getleft(nter)
-                for item in items:#可以在哪种推导中发现它
+                for item in items:  # 可以在哪种推导中发现它
                     rank = self.index[item]
-                    l = filter(lambda x: nter in x, self.grammar[rank][item])#nter 在哪种右部推导中
+                    l = filter(lambda x: nter in x, self.grammar[rank][item])  # nter 在哪种右部推导中
                     for i in l:
                         idx = i.index(nter)
                         if idx < len(i) - 1:
-                            changed = self.combine(self.follow[nter],self.first[i[idx + 1]])
+                            changed = self.combine(self.follow[nter], self.first[i[idx + 1]])
                             if changed:
                                 haschange = True
                         elif idx == len(i) - 1:
-                            changed = self.combine(self.follow[nter],self.follow[item])
+                            changed = self.combine(self.follow[nter], self.follow[item])
                             if changed:
                                 haschange = True
 
-    def hasLeft(self,symbol):
+    def hasLeft(self, symbol):
         rank = self.index[symbol]
-        return map(lambda x: x[0],self.grammar[rank][symbol])
+        return map(lambda x: x[0], self.grammar[rank][symbol])
 
-    def combine(self,l1,l2):
+    def combine(self, l1, l2):
         haschange = False
         for c in l2:
             if c not in l1:
@@ -214,20 +215,17 @@ class llgrammarparser:
                 haschange = True
         return haschange
 
-    #这个符号能从哪个非终结符推出?
-    def getleft(self,symbol):
+    # 这个符号能从哪个非终结符推出?
+    def getleft(self, symbol):
         res = []
         for nter in self.notfinishsymbol:
             rank = self.index[nter]
-            if symbol in reduce(lambda x,y:x+y,self.grammar[rank][nter]):
+            if symbol in reduce(lambda x, y: x + y, self.grammar[rank][nter]):
                 res.append(nter)
         return res
 
 
-    def getitemfamily(self):
-        pass
-
-    def closure(self,statelist): #传入一个项集　list[item]
+    def closure(self, statelist):  # 传入一个项集　list[item]
         res = []
         temp = []
         haschange = True
@@ -239,42 +237,60 @@ class llgrammarparser:
                     a = items.dotindex
                     rank = self.index[items.tolist[a]]
                     for eachlist in self.grammar[rank][items.tolist[a]]:
-                        state = item(items.tolist[a],eachlist,0)
+                        state = item(items.tolist[a], eachlist, 0)
                         temp.append(state)
-                    changed = self.combine(res,temp)
+                    changed = self.combine(res, temp)
                     if changed:
                         haschange = True
         return res
 
-
-    def goto(self,statelist,symbol):#statelist 项集　symbol 文法符号 返回一个项集
+    def goto(self, statelist, symbol):  # statelist 项集　symbol 文法符号 返回一个项集
         res = []
         for state in statelist:
             a = state.dotindex
             if state.dotindex != len(state.tolist) and state.tolist[a] == symbol:
-                aftershift = item(state.left,state.tolist,a + 1)
+                aftershift = item(state.left, state.tolist, a + 1)
                 res.append(aftershift)
-        print res
+        #print res
         return self.closure(res)
+
+    def getitemfamily(self):# lr(0)规范项集族
+        C = []
+        #print self.notfinishsymbol
+        C.append(self.closure([item("E''",['E'],0)]))
+        #print C
+        haschange = True
+        while haschange:
+            haschange = False
+            for c in C:
+                for eachsymbol in (self.finishsymbol + self.notfinishsymbol):
+                    if self.goto(c,eachsymbol):
+                        changed = self.combine(C,[self.goto(c,eachsymbol)])
+                        if changed:
+                            haschange = True
+
+        return C
 
 if __name__ == '__main__':
     s = llgrammarparser()
     s.pretodumpgrammar()
     print s.grammar
     print s.notfinishsymbol
-    print s.finishsymbol
+    print s.finishsymbol#有问题
     print sorted(s.index.items(), key=lambda d: d[1])
-    #print s.index
+    # print s.index
     # print s.iftonone('relational_expression')
     # print s.grammar[43]
     # print s.tonone
-    #print s.hasLeft('Px')
+    # print s.hasLeft('Px')
     s.makefirst()
     print s.first
     s.makefollow()
     print s.follow
     print len(s.follow)
     print len(s.notfinishsymbol)
-    #print s.getleft('E')
-    print s.closure([item("E'",['E'],0)])
-    print s.goto([item("E'",['E'],1),item("E",['E','+','T'],1)],'+')
+    # print s.getleft('E')
+    print s.closure([item("E'", ['E'], 0)])
+    #print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
+    print len(s.getitemfamily())
+    #print
