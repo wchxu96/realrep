@@ -300,6 +300,7 @@ class llgrammarparser:
         return Action,GOTO
 
 
+
 if __name__ == '__main__':
     s = llgrammarparser()
     s.pretodumpgrammar()
