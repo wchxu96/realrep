@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import sys
+import uniout
 from collections import namedtuple
 
 sys.setrecursionlimit(10000)
@@ -224,7 +225,6 @@ class llgrammarparser:
                 res.append(nter)
         return res
 
-
     def closure(self, statelist):  # 传入一个项集　list[item]
         res = []
         temp = []
@@ -251,21 +251,21 @@ class llgrammarparser:
             if state.dotindex != len(state.tolist) and state.tolist[a] == symbol:
                 aftershift = item(state.left, state.tolist, a + 1)
                 res.append(aftershift)
-        #print res
+        # print res
         return self.closure(res)
 
-    def getitemfamily(self):# lr(0)规范项集族
+    def getitemfamily(self):  # lr(0)规范项集族
         C = []
-        #print self.notfinishsymbol
-        C.append(self.closure([item("E'",['E'],0)]))
-        #print C
+        # print self.notfinishsymbol
+        C.append(self.closure([item("E'", ['E'], 0)]))
+        # print C
         haschange = True
         while haschange:
             haschange = False
             for c in C:
                 for eachsymbol in (self.finishsymbol + self.notfinishsymbol):
-                    if self.goto(c,eachsymbol):
-                        changed = self.combine(C,[self.goto(c,eachsymbol)])
+                    if self.goto(c, eachsymbol):
+                        changed = self.combine(C, [self.goto(c, eachsymbol)])
                         if changed:
                             haschange = True
 
@@ -274,39 +274,75 @@ class llgrammarparser:
     def makeautomachine(self):
         if len(self.follow) == 0:
             self.makefollow()
-        C = self.getitemfamily()#C:项集族　C = {I0,I1,...In}
-        Action = {} #action表
-        GOTO = {}#goto表
+        C = self.getitemfamily()  # C:项集族　C = {I0,I1,...In}
+        Action = {}  # action表
+        GOTO = {}  # goto表
         l = len(C)
         for i in range(l):
             for symbol in (self.notfinishsymbol + self.finishsymbol):
-                toitem = self.goto(C[i],symbol)
+                toitem = self.goto(C[i], symbol)
                 if toitem in C:
-                    GOTO[(i,symbol)] = C.index(toitem)#构造goto
-        #构造Action表
+                    GOTO[(i, symbol)] = C.index(toitem)  # 构造goto
+        # 构造Action表
         for j in range(l):
+            if item("E'", ['E'], 1) in C[j]:
+                Action[(j, '$')] = 'acc'  # 接受状态
             for state in C[j]:
                 num = state.dotindex
-                if num != len(state.tolist) and state.tolist[num] in self.finishsymbol and self.goto(C[j],state.tolist[num]) in C:
-                    statenum = C.index(self.goto(C[j],state.tolist[num]))
-                    Action[(j,state.tolist[num])] = "s"+str(statenum)
+                if num != len(state.tolist) and state.tolist[num] in self.finishsymbol and self.goto(C[j], state.tolist[
+                    num]) in C:
+                    statenum = C.index(self.goto(C[j], state.tolist[num]))
+                    Action[(j, state.tolist[num])] = "s" + str(statenum)
                 elif num == len(state.tolist):
                     left = state.left
                     if left != "E'":
-                        print left
                         for followleft in self.follow[left]:
-                            Action[(j,followleft)] = "r"+str(left)#归约为r后的非终结符
+                            Action[(j, followleft)] = "r" + str(left) + '->' + str(state.tolist) + '->' + str(
+                                len(state.tolist))  # 归约为r后的非终结符
+        return Action, GOTO
 
-        return Action,GOTO
+    def decide(self, tokenlist):  # 判断str能否被接受,并打印栈过程,tokenlist:词法分析器的返回token输入流
+        i = 0
+        Action, Goto = self.makeautomachine()
+        statestack = [0]  # 奈何python没有现成的数据结构，用列表模拟好了,这是状态栈
+        symbolstate = []  # 这是文法符号栈
+        # stack.append(0) #初始状态为0
+        while 1:
+            curstate = statestack[len(statestack) - 1]
+            if i < len(tokenlist):
+                res = Action[(curstate, tokenlist[i])]
+            else:
+                res = Action[(curstate, '$')]
+            if res.startswith('s'):  # 移入
+                nextstate = int(res[1:])
+                statestack.append(nextstate)
+                print '移入 %s' %tokenlist[i]
+                i += 1
+            elif res.startswith('r'):  # 归约
+                itemleft, itemto, itemright = res[1:].split('->')  # 右部
+                popnum = int(itemright)
+                for j in xrange(popnum):
+                    statestack.pop()
+                curstate = statestack[len(statestack) - 1]
+                statestack.append(Goto[curstate, itemleft])
+                print '归约%s -> %s' % (itemleft, itemto)
+            elif res == 'acc':
+                print 'acc!'
+                break
 
-
+'''
+    def readtokenandmakegenerator(self,src): #读取文件中的token并生成python genertor对象
+        with open(src) as f:
+            for str in f:
+                yield str
+'''
 
 if __name__ == '__main__':
     s = llgrammarparser()
     s.pretodumpgrammar()
     print s.grammar
     print s.notfinishsymbol
-    print s.finishsymbol#有问题
+    print s.finishsymbol  # 有问题
     print sorted(s.index.items(), key=lambda d: d[1])
     # print s.index
     # print s.iftonone('relational_expression')
@@ -320,7 +356,8 @@ if __name__ == '__main__':
     print len(s.follow)
     print len(s.notfinishsymbol)
     # print s.getleft('E')
-    print s.closure([item("E'", ['E'], 0)])
-    #print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
-    #print s.getitemfamily()
+    print s.goto(s.closure([item("E'", ['E'], 0)]), '(')
+    # print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
+    # print s.getitemfamily()
     print s.makeautomachine()
+    s.decide(['id','*','id','+','id'])
