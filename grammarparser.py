@@ -361,3 +361,4 @@ if __name__ == '__main__':
     # print s.getitemfamily()
     print s.makeautomachine()
     s.decide(['id','*','id','+','id'])
+
