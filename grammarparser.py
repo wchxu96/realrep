@@ -310,7 +310,13 @@ class llgrammarparser:
         while 1:
             curstate = statestack[len(statestack) - 1]
             if i < len(tokenlist):
-                res = Action[(curstate, tokenlist[i])]
+                if (curstate,tokenlist[i]) in Action:
+                    res = Action[(curstate, tokenlist[i])]
+                else:#恐慌模式错误恢复
+                    print '发现一个语法错误 ----error----'
+                    while (curstate ,tokenlist[i]) not in Action:
+                        i += 1
+                    res = Action[(curstate, tokenlist[i])]
             else:
                 res = Action[(curstate, '$')]
             if res.startswith('s'):  # 移入
@@ -360,5 +366,5 @@ if __name__ == '__main__':
     # print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
     # print s.getitemfamily()
     print s.makeautomachine()
-    s.decide(['id','*','id','+','id'])
+    s.decide(['+','id','*','+','id'])
 
