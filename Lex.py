@@ -1,3 +1,4 @@
+# coding=utf-8
 import collections
 class Lexer:
     def __init__(self):
@@ -8,6 +9,7 @@ class Lexer:
         self.noteDFA = [['^/', '/', '#', '#', '#'], ['^/*', '/', '*', '#', '#'],
                    ['#', '#', '^*', '*', '#'], ['#', '#', '^/*', '*', '/'],
                    ['#', '#', '#', '#', '#']]
+        self.twoop = ['>=','==','<=','!=','++','--','+=','-=','*=','/=']
         self.digitDFA = {0: {'d': 1}, 1: {'d': 1, '.': 2, 'e': 4}, 2: {'d': 3},
                     3: {'d': 3, 'e': 4}, 4: {'+-': 5, 'd': 6}, 5: {'d': 6}, 6: {'d': 6,}}
         #self.stringDFA = ["#\\b#", "##a#", "#\\b\"", "####"]
@@ -25,6 +27,8 @@ class Lexer:
         hasmistake = False
         with open(src, 'r') as f:
             for strs in f:
+                if '\r\n' in strs:
+                    strs = strs.replace('\r\n','')
                 if strs == "":
                     self.linenum += 1
                 else:
@@ -44,20 +48,35 @@ class Lexer:
                                     break
                                 self.errortable[(token,self.linenum)] = 'identifier error~'
                             '''
-                            if token in self.keywords:
-                                self.symboltable[(token,self.symbol_pos,self.linenum)] = (token.upper(), '_')
-                                self.symbol_pos += 1
+                            if i < len(strs) and strs[i] not in (self.twoop + self.edgeop + self.space): #标志符后面不是分隔符，而是@#$%这类
+                                while strs[i] not in (self.twoop + self.edgeop+self.space):
+                                    token += strs[i]
+                                    i += 1
+                                    if i >= len(strs):
+                                        break
+                                self.errortable[(token, self.linenum)] = 'error on identifier bad name~'
                             else:
-                                self.symboltable[(token,self.symbol_pos,self.linenum)] = ('IDN', token)
-                                self.symbol_pos += 1
+                                if token in self.keywords:
+                                    self.symboltable[(token,self.symbol_pos,self.linenum)] = (token.upper(), '_')
+                                    self.symbol_pos += 1
+                                else:
+                                    self.symboltable[(token,self.symbol_pos,self.linenum)] = ('IDN', token)
+                                    self.symbol_pos += 1
                             token = ""
                             i -= 1
                         elif strs[i] == '/':
-                            #temp = i
-                            if self.isdigit(strs[i + 1]) or (self.islegalprefix(strs[i + 1]) and strs[i + 1] != '_'):
+                            temp = i + 1
+                            #while i < len(strs):
+                            #    if strs[i] !=
+                            while temp < len(strs):
+                                if strs[temp] != ' ':
+                                    break
+                                temp += 1
+                            if self.isdigit(strs[temp]) or (self.islegalprefix(strs[temp]) and strs[temp] != '_'):
                                 self.symboltable[(strs[i], self.symbol_pos,self.linenum)] = ('/', '_')
                                 self.symbol_pos += 1
                                 #i += 1
+                                i = temp - 1
                             elif strs[i + 1] == '/':
                                 while (i < len(strs)):
                                     token += strs[i]
@@ -82,9 +101,19 @@ class Lexer:
                                     self.errortable[(token,self.linenum)] = 'note error~'
                                 state = 0
                                 token = ''
-                        elif i < len(strs) and (strs[i] in self.operator or strs[i] in self.edgeop):
-                            self.symboltable[(strs[i],self.symbol_pos,self.linenum)] = (strs[i], '_')
-                            self.symbol_pos += 1
+                        elif i < len(strs) and (strs[i] in self.edgeop):
+                            if strs[i] in self.edgeop and i + 1 < len(strs):
+                                tryitem = strs[i] + strs[i+1]
+                                if tryitem in self.twoop:
+                                    i += 1
+                                    self.symboltable[(tryitem, self.symbol_pos, self.linenum)] = (tryitem, '_')
+                                    self.symbol_pos += 1
+                                else:
+                                    self.symboltable[(strs[i], self.symbol_pos, self.linenum)] = (strs[i], '_')
+                                    self.symbol_pos += 1
+                            else:
+                                self.symboltable[(strs[i],self.symbol_pos,self.linenum)] = (strs[i], '_')
+                                self.symbol_pos += 1
                         #const number
                         elif i < len(strs) and self.isdigit(strs[i]):
                             while i < len(strs) and (strs[i] == 'E' or strs[i] == '.' or self.isdigit(strs[i]) or strs[i] == '+' or strs[i] == '-'):

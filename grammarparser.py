@@ -306,6 +306,7 @@ class llgrammarparser:
         Action, Goto = self.makeautomachine()
         statestack = [0]  # 奈何python没有现成的数据结构，用列表模拟好了,这是状态栈
         symbolstate = []  # 这是文法符号栈
+        printstack = []
         # stack.append(0) #初始状态为0
         while 1:
             curstate = statestack[len(statestack) - 1]
@@ -322,7 +323,7 @@ class llgrammarparser:
             if res.startswith('s'):  # 移入
                 nextstate = int(res[1:])
                 statestack.append(nextstate)
-                print '移入 %s' %tokenlist[i]
+                print '移入 %s' % tokenlist[i]
                 i += 1
             elif res.startswith('r'):  # 归约
                 itemleft, itemto, itemright = res[1:].split('->')  # 右部
@@ -332,9 +333,23 @@ class llgrammarparser:
                 curstate = statestack[len(statestack) - 1]
                 statestack.append(Goto[curstate, itemleft])
                 print '归约%s -> %s' % (itemleft, itemto)
+                printstack.append(str(itemleft) + '->' + itemto)
             elif res == 'acc':
                 print 'acc!'
                 break
+        print printstack
+        self.printtree(printstack,printstack.pop())
+
+
+    def printtree(self,printstack,printitem):
+        if len(printstack) == 0:
+            return
+        else:
+            left,right = printitem.split('->')
+            reallist = filter(lambda x: x!="[" and x != "'" and x != "]" and x !=',', list(right)) #返回一个list
+            print left
+            print '  '
+            #self.printtree(printstack,printstack.pop())
 
 '''
     def readtokenandmakegenerator(self,src): #读取文件中的token并生成python genertor对象
@@ -342,6 +357,8 @@ class llgrammarparser:
             for str in f:
                 yield str
 '''
+
+
 
 if __name__ == '__main__':
     s = llgrammarparser()
@@ -366,5 +383,5 @@ if __name__ == '__main__':
     # print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
     # print s.getitemfamily()
     print s.makeautomachine()
-    s.decide(['+','id','*','+','id'])
+    s.decide(['id','*','id'])
 
