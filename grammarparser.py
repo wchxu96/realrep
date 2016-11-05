@@ -8,6 +8,10 @@ sys.setrecursionlimit(10000)
 
 item = namedtuple('item', 'left tolist dotindex')  # 项集中每一个状态的定义
 
+class syntaxnode(object):
+    def __init__(self,left):
+        self.left = left
+        self.next = None
 
 # 暂时写成SLR(1)的，以后再改吧
 class llgrammarparser:
@@ -307,6 +311,8 @@ class llgrammarparser:
         statestack = [0]  # 奈何python没有现成的数据结构，用列表模拟好了,这是状态栈
         symbolstate = []  # 这是文法符号栈
         printstack = []
+        slist = []
+        tobereduced = None
         # stack.append(0) #初始状态为0
         while 1:
             curstate = statestack[len(statestack) - 1]
@@ -314,7 +320,7 @@ class llgrammarparser:
                 if (curstate,tokenlist[i]) in Action:
                     res = Action[(curstate, tokenlist[i])]
                 else:#恐慌模式错误恢复
-                    print '发现一个语法错误 ----error----'
+                    print 'move error!----error----'
                     while (curstate ,tokenlist[i]) not in Action:
                         i += 1
                     res = Action[(curstate, tokenlist[i])]
@@ -324,23 +330,32 @@ class llgrammarparser:
                 nextstate = int(res[1:])
                 statestack.append(nextstate)
                 print '移入 %s' % tokenlist[i]
+                s = syntaxnode(tokenlist[i])
+                symbolstate.append(s)
                 i += 1
             elif res.startswith('r'):  # 归约
                 itemleft, itemto, itemright = res[1:].split('->')  # 右部
                 popnum = int(itemright)
+                #itemto = filter(lambda x: x!="[" and x != "'" and x != "]" and x !=',', list(itemto)) #转换成列表
                 for j in xrange(popnum):
-                    statestack.pop()
+                    stacktop = statestack.pop()
+                    slist.append(symbolstate.pop())
                 curstate = statestack[len(statestack) - 1]
                 statestack.append(Goto[curstate, itemleft])
+                tobereduced = syntaxnode(itemleft)
+                tobereduced.next = slist
+                symbolstate.append(tobereduced)
+                slist = []
                 print '归约%s -> %s' % (itemleft, itemto)
-                printstack.append(str(itemleft) + '->' + itemto)
+                #printstack.append(str(itemleft) + '->' + itemto)
+
             elif res == 'acc':
                 print 'acc!'
-                break
-        print printstack
-        self.printtree(printstack,printstack.pop())
+                return [tobereduced]
+        #print printstack
+        #self.printtree(printstack,printstack.pop())
 
-
+    '''
     def printtree(self,printstack,printitem):
         if len(printstack) == 0:
             return
@@ -350,15 +365,21 @@ class llgrammarparser:
             print left
             print '  '
             #self.printtree(printstack,printstack.pop())
+    '''
 
-'''
+    '''
     def readtokenandmakegenerator(self,src): #读取文件中的token并生成python genertor对象
         with open(src) as f:
             for str in f:
                 yield str
 '''
 
-
+    def printtree(self,treenode,depth):#treenode:列表,depth深度，决定用几个tab键
+        if treenode == None:
+            return
+        for item in treenode:
+            print depth * ' ' + item.left
+            self.printtree(item.next,depth + 1)
 
 if __name__ == '__main__':
     s = llgrammarparser()
@@ -383,5 +404,7 @@ if __name__ == '__main__':
     # print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
     # print s.getitemfamily()
     print s.makeautomachine()
-    s.decide(['id','*','id'])
+    m = s.decide(['id','*','id'])
+    print len(m[0].next)
+    s.printtree(m,0)
 

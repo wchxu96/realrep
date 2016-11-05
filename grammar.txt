@@ -1,24 +1,32 @@
 Px -> P
-P -> Da Sa | Da | Sa
+P -> Da Sa | Da
+P -> Sa
 Sa -> Sa S | S
 Da -> Da D | D
-D -> proc id ( IDlist ) { P } | T id ;
-IDlist -> IDlist , id | id
+D -> Df ( DFlist ) { P } | Df ( ) { P }
+DFlist -> DFlist , Df | Df
+D -> Df ; | Ds ;
+Ds -> T IDlist
+Df -> T id
+IDlist -> IDlist , id | IDlist , L | id | L
 T -> X C | X | record D
-X -> integer | X -> real
+X -> integer | void | real | float | double
 C -> [ num ] C | [ num ]
-S -> id = E ; | S -> L = E ; | if ( B ) { Sa } | if ( B ) { Sa } else { Sa } | while ( B ) { Sa } | call id ( Elist ) | call id ( )
+S -> id = E ; | L = E ; | id += E ; | id -= E ; | L += E ; | L -= E ; | Df = E ; | Ds = { Elist } ; | return E ;
 E -> E + Ea | E - Ea | Ea
 Ea -> R
 R -> R * Ra | R / Ra | Ra
-Ra -> Y
-Y -> ( E ) | num | id | - Y | Y -> L
-L -> L [ E ] | L -> id [ E ]
+Ra -> Y | ++ Y | Y ++ | -- Y | Y --
+Y -> ( E ) | num | F | id | - Y | L
+L -> L [ E ] | id [ E ]
+S -> if ( B ) { Sa } | if ( B ) { Sa } else { Sa } | while ( B ) { Sa } | do { Sa } while ( B ) ;
 B -> B or Ba | Ba
 Ba -> N
 N -> N and Na | Na
 Na -> M
-M -> E relop E | not V | V
+M -> E relop E | M -> not V | V
 V -> true | false | ( B )
 relop -> < | <= | == | != | > | >=
+S -> call id ( Elist ) | call id ( ) | F
+F -> id ( Elist ) | id ( )
 Elist -> Elist , E | E
