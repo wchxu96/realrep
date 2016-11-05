@@ -78,7 +78,7 @@ class llgrammarparser:
     #计算first集
     '''
         i = 0
-        with open('grammarex.txt') as f:
+        with open('grammar.txt') as f:
             for strs in f:
                 temp = {}
                 dictrightvector = []
@@ -186,12 +186,12 @@ class llgrammarparser:
             self.makefirst()
         for nter in self.notfinishsymbol:
             self.follow[nter] = []
-        self.follow["E'"].append('$')
+        self.follow["Px"].append('$')
         haschange = True
         while haschange:
             haschange = False
             for nter in self.notfinishsymbol:
-                if nter == "E'":
+                if nter == "Px":
                     continue
                 items = self.getleft(nter)
                 for item in items:  # 可以在哪种推导中发现它
@@ -261,7 +261,7 @@ class llgrammarparser:
     def getitemfamily(self):  # lr(0)规范项集族
         C = []
         # print self.notfinishsymbol
-        C.append(self.closure([item("E'", ['E'], 0)]))
+        C.append(self.closure([item("Px", ['P'], 0)]))
         # print C
         haschange = True
         while haschange:
@@ -283,13 +283,13 @@ class llgrammarparser:
         GOTO = {}  # goto表
         l = len(C)
         for i in range(l):
-            for symbol in (self.notfinishsymbol + self.finishsymbol):
+            for symbol in (self.notfinishsymbol + self.finishsymbol + ['$']):
                 toitem = self.goto(C[i], symbol)
                 if toitem in C:
                     GOTO[(i, symbol)] = C.index(toitem)  # 构造goto
         # 构造Action表
         for j in range(l):
-            if item("E'", ['E'], 1) in C[j]:
+            if item("Px", ['P'], 1) in C[j]:
                 Action[(j, '$')] = 'acc'  # 接受状态
             for state in C[j]:
                 num = state.dotindex
@@ -299,7 +299,7 @@ class llgrammarparser:
                     Action[(j, state.tolist[num])] = "s" + str(statenum)
                 elif num == len(state.tolist):
                     left = state.left
-                    if left != "E'":
+                    if left != "Px":
                         for followleft in self.follow[left]:
                             Action[(j, followleft)] = "r" + str(left) + '->' + str(state.tolist) + '->' + str(
                                 len(state.tolist))  # 归约为r后的非终结符
@@ -321,11 +321,15 @@ class llgrammarparser:
                     res = Action[(curstate, tokenlist[i])]
                 else:#恐慌模式错误恢复
                     print 'move error!----error----'
-                    while (curstate ,tokenlist[i]) not in Action:
+                    while i < len(tokenlist) - 1 and (curstate ,tokenlist[i]) not in Action :
                         i += 1
-                    res = Action[(curstate, tokenlist[i])]
+                    if (curstate, tokenlist[i]) not in Action:
+                        print 'error cannot recover'
+                        return [tobereduced]
+                    else:
+                        res = Action[curstate, tokenlist[i]]
             else:
-                res = Action[(curstate, '$')]
+                res = Action[curstate, '$']
             if res.startswith('s'):  # 移入
                 nextstate = int(res[1:])
                 statestack.append(nextstate)
@@ -341,7 +345,8 @@ class llgrammarparser:
                     stacktop = statestack.pop()
                     slist.append(symbolstate.pop())
                 curstate = statestack[len(statestack) - 1]
-                statestack.append(Goto[curstate, itemleft])
+                if (curstate, itemleft) in Goto:
+                    statestack.append(Goto[(curstate, itemleft)])
                 tobereduced = syntaxnode(itemleft)
                 tobereduced.next = slist
                 symbolstate.append(tobereduced)
@@ -396,15 +401,27 @@ if __name__ == '__main__':
     s.makefirst()
     print s.first
     s.makefollow()
-    print s.follow
+    print "follow:"
+    print  s.follow
     print len(s.follow)
     print len(s.notfinishsymbol)
     # print s.getleft('E')
-    print s.goto(s.closure([item("E'", ['E'], 0)]), '(')
+    #print s.goto(s.closure([item("E'", ['E'], 0)]), '(')
     # print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
     # print s.getitemfamily()
     print s.makeautomachine()
-    m = s.decide(['id','*','id'])
-    print len(m[0].next)
+    lex = []
+    with open('dest.txt','r') as f:
+        for strs in f:
+            if '<' in strs and ',' in strs:
+                v = strs.split('<')[1].split(',')[0]
+                if v == '':
+                    lex.append(',')
+                else:
+                    lex.append(v)
+    print lex
+    m = s.decide(lex)
+    #print len(m[0].next)
     s.printtree(m,0)
+    #print len(lex)
 

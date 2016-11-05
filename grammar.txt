@@ -1,32 +1,28 @@
-Px -> P
-P -> Da Sa | Da
-P -> Sa
-Sa -> Sa S | S
-Da -> Da D | D
-D -> Df ( DFlist ) { P } | Df ( ) { P }
-DFlist -> DFlist , Df | Df
-D -> Df ; | Ds ;
-Ds -> T IDlist
-Df -> T id
-IDlist -> IDlist , id | IDlist , L | id | L
-T -> X C | X | record D
-X -> integer | void | real | float | double
-C -> [ num ] C | [ num ]
-S -> id = E ; | L = E ; | id += E ; | id -= E ; | L += E ; | L -= E ; | Df = E ; | Ds = { Elist } ; | return E ;
-E -> E + Ea | E - Ea | Ea
-Ea -> R
-R -> R * Ra | R / Ra | Ra
-Ra -> Y | ++ Y | Y ++ | -- Y | Y --
-Y -> ( E ) | num | F | id | - Y | L
-L -> L [ E ] | id [ E ]
-S -> if ( B ) { Sa } | if ( B ) { Sa } else { Sa } | while ( B ) { Sa } | do { Sa } while ( B ) ;
-B -> B or Ba | Ba
-Ba -> N
-N -> N and Na | Na
-Na -> M
-M -> E relop E | M -> not V | V
-V -> true | false | ( B )
-relop -> < | <= | == | != | > | >=
-S -> call id ( Elist ) | call id ( ) | F
-F -> id ( Elist ) | id ( )
-Elist -> Elist , E | E
+Px-> P
+P-> Da Sa | Da | Sa
+Sa-> Sa S | S
+Da-> Da D | D
+D-> Df ( DFlist ) { P } | Df ( ) { P } | Df ; | Ds ;
+DFlist-> DFlist , Df | Df
+Ds-> T IDlist
+Df-> T id
+IDlist-> IDlist , id | IDlist , L | id | L
+T-> X C | X | record D
+X-> int | void | float | double
+C-> [ num ] C | [ num ]
+E-> E + Ea | E - Ea | Ea
+Ea-> R
+R-> R * Ra | R / Ra | Ra
+Ra-> Y | ++ Y | Y ++ | -- Y | Y --
+Y-> ( E ) | num | F | id | - Y | L
+L-> L [ E ] | id [ E ]
+S-> if ( B ) { Sa } | if ( B ) { Sa } else { Sa } | while ( B ) { Sa } | do { Sa } while ( B ) ; | call id ( Elist ) | call id ( ) | F |  id = E ; | L = E ; | id += E ; | id -= E ; | L += E ; | L -= E ; | Df = E ; | Ds = { Elist } ; | return E ;
+B-> B or Ba | Ba
+Ba-> N
+N-> N and Na | Na
+Na-> M
+M-> E relop E | not V | V
+V-> true | false | ( B )
+relop-> < | <= | == | != | > | >=
+F-> id ( Elist ) | id ( )
+Elist-> Elist , E | E

@@ -2,7 +2,7 @@
 import collections
 class Lexer:
     def __init__(self):
-        self.keywords = ['int', 'float', 'boolean','char','if', 'else', 'return', 'do', 'while', 'return', 'def','typedef','struct']
+        self.keywords = ['int', 'float', 'boolean','char','if', 'else', 'return', 'do', 'while', 'return', 'def','typedef','struct','void']
         self.operator = ['+', '-', '*', '/', '|', '&', '^','!','%','>','<']
         self.edgeop = ['=', ';', '[', ']','{','}','(',')',','] + self.operator
         self.space = [' ','\t']
@@ -48,20 +48,20 @@ class Lexer:
                                     break
                                 self.errortable[(token,self.linenum)] = 'identifier error~'
                             '''
-                            if i < len(strs) and strs[i] not in (self.twoop + self.edgeop + self.space): #标志符后面不是分隔符，而是@#$%这类
+                            '''if i < len(strs) and strs[i] not in (self.twoop + self.edgeop + self.space): #标志符后面不是分隔符，而是@#$%这类
                                 while strs[i] not in (self.twoop + self.edgeop+self.space):
                                     token += strs[i]
                                     i += 1
                                     if i >= len(strs):
                                         break
                                 self.errortable[(token, self.linenum)] = 'error on identifier bad name~'
+                            '''
+                            if token in self.keywords:
+                                self.symboltable[(token,self.symbol_pos,self.linenum)] = (token, '_')
+                                self.symbol_pos += 1
                             else:
-                                if token in self.keywords:
-                                    self.symboltable[(token,self.symbol_pos,self.linenum)] = (token.upper(), '_')
-                                    self.symbol_pos += 1
-                                else:
-                                    self.symboltable[(token,self.symbol_pos,self.linenum)] = ('IDN', token)
-                                    self.symbol_pos += 1
+                                self.symboltable[(token,self.symbol_pos,self.linenum)] = ('id', token)
+                                self.symbol_pos += 1
                             token = ""
                             i -= 1
                         elif strs[i] == '/':
@@ -136,7 +136,7 @@ class Lexer:
                                 continue
 
                             elif state == 1 or state == 3 or state == 6:
-                                self.symboltable[(token,self.symbol_pos,self.linenum)] = ('CONST NUM', token)
+                                self.symboltable[(token,self.symbol_pos,self.linenum)] = ('num', token)
                                 self.symbol_pos += 1
                             else:
                                 # hasmistake = True
