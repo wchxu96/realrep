@@ -29,6 +29,8 @@ class Lexer:
             for strs in f:
                 if '\r\n' in strs:
                     strs = strs.replace('\r\n','')
+                elif '\n' in strs:
+                    strs = strs.replace('\n','')
                 if strs == "":
                     self.linenum += 1
                 else:
@@ -226,7 +228,7 @@ class Lexer:
     def printtoconsole(self,dest):
         for (item, pos,line) in self.symboltable:
             print "%s %d <%s, %s> on line %d" % (item, pos, self.symboltable[(item,pos,line)][0], self.symboltable[(item,pos,line)][1],line)
-            dest.write("%s %d <%s, %s> on line %d" % (item, pos, self.symboltable[(item,pos,line)][0], self.symboltable[(item,pos,line)][1],line))
+            dest.write("%s %d |%s, %s| on line %d" % (item, pos, self.symboltable[(item,pos,line)][0], self.symboltable[(item,pos,line)][1],line))
             dest.write('\n')
 
     def printerror(self,dest):

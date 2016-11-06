@@ -16,7 +16,7 @@ R-> R * Ra | R / Ra | Ra
 Ra-> Y | ++ Y | Y ++ | -- Y | Y --
 Y-> ( E ) | num | F | id | - Y | L
 L-> L [ E ] | id [ E ]
-S-> if ( B ) { Sa } | if ( B ) { Sa } else { Sa } | while ( B ) { Sa } | do { Sa } while ( B ) ; | call id ( Elist ) | call id ( ) | F |  id = E ; | L = E ; | id += E ; | id -= E ; | L += E ; | L -= E ; | Df = E ; | Ds = { Elist } ; | return E ;
+S-> if ( B ) { Sa } | if ( B ) { Sa } else { Sa } | while ( B ) { Sa } | do { Sa } while ( B ) ; | call id ( Elist ) | call id ( ) | F | id = E ; | L = E ; | id += E ; | id -= E ; | L += E ; | L -= E ; | Df = E ; | Ds = { Elist } ; | return E ;
 B-> B or Ba | Ba
 Ba-> N
 N-> N and Na | Na

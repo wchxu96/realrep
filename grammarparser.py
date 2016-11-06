@@ -390,14 +390,17 @@ if __name__ == '__main__':
     s = llgrammarparser()
     s.pretodumpgrammar()
     print s.grammar
+    s.makefirst()
+    print s.first
+    print s.grammar
     print s.notfinishsymbol
     print s.finishsymbol  # 有问题
     print sorted(s.index.items(), key=lambda d: d[1])
-    # print s.index
-    # print s.iftonone('relational_expression')
-    # print s.grammar[43]
-    # print s.tonone
-    # print s.hasLeft('Px')
+    print s.index
+    #print s.iftonone('relational_expression')
+    #print s.grammar[43]
+    #print s.tonone
+    #print s.hasLeft('Px')
     s.makefirst()
     print s.first
     s.makefollow()
@@ -405,23 +408,23 @@ if __name__ == '__main__':
     print  s.follow
     print len(s.follow)
     print len(s.notfinishsymbol)
-    # print s.getleft('E')
+    #print s.getleft('E')
     #print s.goto(s.closure([item("E'", ['E'], 0)]), '(')
-    # print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
-    # print s.getitemfamily()
+    #print s.goto([item("E'", ['E'], 1), item("E", ['E', '+', 'T'], 1)], '+')
+    print s.getitemfamily()
     print s.makeautomachine()
     lex = []
     with open('dest.txt','r') as f:
         for strs in f:
-            if '<' in strs and ',' in strs:
-                v = strs.split('<')[1].split(',')[0]
+            if '|' in strs and ',' in strs:
+                v = strs.split('|')[1].split(',')[0]
                 if v == '':
                     lex.append(',')
                 else:
                     lex.append(v)
     print lex
     m = s.decide(lex)
-    #print len(m[0].next)
+    print len(m[0].next)
     s.printtree(m,0)
-    #print len(lex)
+    print len(lex)
 
